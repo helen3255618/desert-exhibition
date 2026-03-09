@@ -22,7 +22,7 @@ def load_knowledge_base():
     collection = chroma_client.get_or_create_collection("exhibition")
     
     chunks = []
-    for fname in ["desert_chunks_ch_001_054.jsonl", "desert_chunks_ch_055-100.jsonl", "desert_chunks_ch_101_130.jsonl"]:
+    for fname in ["desert_chunks_ch_001_054.jsonl", "desert_chunks_ch_055-100.jsonl"]:
         with open(fname, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
