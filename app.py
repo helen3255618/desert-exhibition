@@ -19,11 +19,14 @@ st.caption("Speak in Chinese, English, or French — I'll respond in your langua
 @st.cache_resource
 def load_knowledge_base():
     chroma_client = chromadb.Client()
-    collection = chroma_client.get_or_create_collection("exhibition")
+    chroma_client.delete_collection("exhibition") if any(c.name == "exhibition" for c in chroma_client.list_collections()) else None
+    collection = chroma_client.create_collection("exhibition")
     
     chunks = []
     for fname in ["desert_chunks_ch_001_054.jsonl", "desert_chunks_ch_055-100.jsonl"]:
-        with open(fname, "r", encoding="utf-8") as f:
+        import os
+        fpath = os.path.join(os.path.dirname(__file__), fname)
+        with open(fpath, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -93,7 +96,6 @@ def text_to_speech(text, lang):
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# 录音
 audio_input = st.audio_input("🎙️ Press to speak")
 
 if audio_input is not None:
@@ -121,11 +123,19 @@ if audio_input is not None:
             "lang": lang
         })
 
-for item in reversed(st.session_state.history):
+# 显示对话历史，只有最新一条autoplay
+for i, item in enumerate(reversed(st.session_state.history)):
     st.markdown(f"**❓ {item['question']}**")
     st.markdown(f"💬 {item['answer']}")
-    st.markdown(
-        f'<audio autoplay controls src="data:audio/mp3;base64,{item["audio"]}"></audio>',
-        unsafe_allow_html=True
-    )
+    if i == 0:
+        st.markdown(
+            f'<audio autoplay controls src="data:audio/mp3;base64,{item["audio"]}"></audio>',
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f'<audio controls src="data:audio/mp3;base64,{item["audio"]}"></audio>',
+            unsafe_allow_html=True
+        )
     st.divider()
+    
