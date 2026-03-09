@@ -4,7 +4,7 @@ from openai import OpenAI
 import json
 import base64
 import io
-from audiorecorder import audiorecorder
+from streamlit_audiorecorder import audiorecorder
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
