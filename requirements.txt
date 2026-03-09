@@ -1,5 +1,5 @@
 openai
 chromadb
 streamlit
-streamlit-audiorecorder
-pydub
+streamlit-audiorecorder==0.0.5
+pydub==0.25.1
