@@ -19,7 +19,7 @@ st.caption("Speak in Chinese, English, or French — I'll respond in your langua
 @st.cache_resource
 def load_knowledge_base():
     chroma_client = chromadb.Client()
-    collection = chroma_client.create_collection("exhibition")
+    collection = chroma_client.get_or_create_collection("exhibition")
     
     chunks = []
     for fname in ["desert_chunks_ch_001_054.jsonl", "desert_chunks_ch_055-100.jsonl", "desert_chunks_ch_101_130.jsonl"]:
