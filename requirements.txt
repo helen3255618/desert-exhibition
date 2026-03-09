@@ -1,0 +1,6 @@
+openai
+chromadb
+streamlit
+streamlit-audiorecorder
+pydub
+EOF
