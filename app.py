@@ -1,0 +1,72 @@
+import streamlit as st
+import chromadb
+from openai import OpenAI
+import json
+import base64
+import io
+from audiorecorder import audiorecorder
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+st.set_page_config(
+    page_title="Desert Exhibition",
+    page_icon="🏜️",
+    layout="centered"
+)
+
+st.title("🏜️ Desert Exhibition Assistant")
+st.caption("Speak in Chinese, English, or French — I'll respond in your language.")
+
+@st.cache_resource
+def load_knowledge_base():
+    chroma_client = chromadb.Client()
+    collection = chroma_client.create_collection("exhibition")
+    
+    chunks = []
+    for fname in ["desert_chunks_ch_001_054.jsonl", "desert_chunks_ch_055-100.jsonl"]:
+        with open(fname, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    chunks.append(json.loads(line))
+    
+    texts = [c["text"] for c in chunks]
+    response = client.embeddings.create(
+        input=texts,
+        model="text-embedding-3-small"
+    )
+    embeddings = [r.embedding for r in response.data]
+    
+    collection.add(
+        ids=[c["chunk_id"] for c in chunks],
+        embeddings=embeddings,
+        documents=texts,
+        metadatas=[{
+            "chunk_id": c.get("chunk_id", ""),
+            "domain": c.get("domain", ""),
+            "exhibition_zone": c.get("exhibition_zone", ""),
+            "subject": ", ".join(c.get("subject", [])),
+        } for c in chunks]
+    )
+    return collection
+
+collection = load_knowledge_base()
+
+SYSTEM_PROMPTS = {
+    "zh": """你是一个博物馆展览的知识助手，风格是"诗意的科学家"：
+语言有温度和画面感，但所有细节必须来自提供的来源，不添加、不虚构。
+回答长度控制在80-100字之间，适合朗读。不要加来源标注。用中文回答。""",
+    "en": """You are a museum exhibition assistant with the style of a poetic scientist.
+Warm and vivid language, but every detail must come from the provided sources. Do not invent.
+Keep responses to 80-100 words, suitable for reading aloud. No source references. Answer in English.""",
+    "fr": """Tu es un assistant de musée au style de scientifique poétique.
+Langage chaleureux, mais chaque détail doit provenir des sources. Ne pas inventer.
+Réponse de 80-100 mots, adaptée à la lecture. Pas de références. Réponds en français."""
+}
+
+VOICES = {"zh": "nova", "en": "shimmer", "fr": "nova"}
+
+def search(query, n=5):
+    embedding = client.embeddings.create(
+        input=query, model="text-embedding-3-small"
+    ).data[0].em
